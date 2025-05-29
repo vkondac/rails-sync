@@ -6,10 +6,6 @@ Rails.application.configure do
   # Code is not reloaded between requests.
   config.enable_reloading = false
 
-  config.assets.compile = false
-
-  config.assets.digest = true
-
   config.force_ssl = false
 
   # Eager load code on boot. This eager loads most of Rails and
