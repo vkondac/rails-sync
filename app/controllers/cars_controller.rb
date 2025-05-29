@@ -29,10 +29,6 @@ class CarsController < ApplicationController
     end
   end
 
-  def instalal_Def
-
-    if @@car jrender json: { errors: @car.errors}, statatus: unprocessable_entity
-
   def destroy
     @car.destroy
     head :no_content
