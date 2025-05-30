@@ -25,8 +25,10 @@ class SyncController < ApplicationController
 
   # Push changes to server
   def push
-    changes = params[:changes] || {}
-    last_pulled_at = params[:last_pulled_at]
+    # Use permitted parameters
+    sync_data = sync_params
+    changes = sync_data[:changes] || {}
+    last_pulled_at = sync_data[:last_pulled_at]
 
     Rails.logger.info "Push sync received: cars: #{changes.dig('cars')&.values&.flatten&.size || 0} records"
 
@@ -71,6 +73,20 @@ class SyncController < ApplicationController
 
   private
 
+  # Add strong parameters
+  def sync_params
+    params.permit(
+      :last_pulled_at,
+      changes: {
+        cars: {
+          created: [:id, :make, :model, :year, :color, :price, :mileage, :created_at, :updated_at],
+          updated: [:id, :make, :model, :year, :color, :price, :mileage, :created_at, :updated_at],
+          deleted: []
+        }
+      }
+    )
+  end
+
   def get_changes_since(last_pulled_at)
     changes = {
       cars: { created: [], updated: [], deleted: [] }
@@ -105,15 +121,16 @@ class SyncController < ApplicationController
 
     # Handle created records
     (table_changes['created'] || []).each do |record_data|
-      record_data = record_data.except('_status', '_changed')
-      model_class.create!(record_data)
+      # Convert to regular hash to avoid strong parameters issues
+      clean_data = record_data.to_h.except('_status', '_changed')
+      model_class.create!(clean_data)
     end
 
     # Handle updated records
     (table_changes['updated'] || []).each do |record_data|
-      record_data = record_data.except('_status', '_changed')
-      record = model_class.find_by(id: record_data['id'])
-      record&.update!(record_data.except('id'))
+      clean_data = record_data.to_h.except('_status', '_changed')
+      record = model_class.find_by(id: clean_data['id'])
+      record&.update!(clean_data.except('id'))
     end
 
     # Handle deleted records
