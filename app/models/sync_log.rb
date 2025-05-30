@@ -6,4 +6,11 @@ class SyncLog < ApplicationRecord
 
   scope :since_timestamp, ->(timestamp) { where('timestamp > ?', timestamp) }
   scope :for_table, ->(table_name) { where(table_name: table_name) }
+  
+  def parsed_data
+    return nil if data.blank?
+    JSON.parse(data)
+  rescue JSON::ParserError
+    nil
+  end
 end

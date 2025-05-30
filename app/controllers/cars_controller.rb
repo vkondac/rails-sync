@@ -12,8 +12,10 @@ class CarsController < ApplicationController
 
   def create
     @car = Car.new(car_params)
-    @car.id = generate_watermelon_id unless @car.id.present?
-
+    
+    # Always generate a new unique ID
+    @car.id = generate_unique_watermelon_id
+    
     if @car.save
       render json: @car, status: :created
     else
@@ -44,7 +46,11 @@ class CarsController < ApplicationController
     params.require(:car).permit(:id, :make, :model, :year, :color, :price, :mileage)
   end
 
-  def generate_watermelon_id
-    "car_#{Time.current.to_i}_#{SecureRandom.hex(4)}"
+  def generate_unique_watermelon_id
+    loop do
+      # Use more entropy to avoid collisions
+      id = "car_#{Time.current.to_f.to_s.gsub('.', '_')}_#{SecureRandom.hex(6)}"
+      break id unless Car.exists?(id)
+    end
   end
 end
